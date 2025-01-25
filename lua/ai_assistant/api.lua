@@ -3,7 +3,7 @@ local M = {}
 local ui = require("ai_assistant.ui")
 local history = require("ai_assistant.history")
 
-local function get_curl_command(prompt, api_key, model)
+local function get_curl_command(prompt, api_key, model, system)
 	local json_data = vim.json.encode({
 		model = model,
 		max_tokens = 2048,
@@ -13,7 +13,7 @@ local function get_curl_command(prompt, api_key, model)
 			role = "user",
 			content = prompt,
 		} },
-		system = "Provide concise responses while maintaining accuracy and helpfulness.",
+		system = system,
 	})
 
 	return string.format(
@@ -23,7 +23,7 @@ local function get_curl_command(prompt, api_key, model)
 	)
 end
 
-M.query_assistant = function(prompt, api_key, model)
+M.query_assistant = function(prompt, api_key, model, system)
 	local buf = ui.create_response_buffer()
 	local full_content = ""
 
@@ -46,7 +46,7 @@ M.query_assistant = function(prompt, api_key, model)
 		history.log_api_call(prompt, full_content)
 	end
 
-	local curl_cmd = get_curl_command(prompt, api_key, model)
+	local curl_cmd = get_curl_command(prompt, api_key, model, system)
 	vim.fn.jobstart(curl_cmd, {
 		on_stdout = on_stdout,
 		stdout_buffered = false,
