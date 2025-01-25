@@ -38,7 +38,7 @@ end
 M.make_request_input_visual = function(api_key, model)
 	local prompt = vim.fn.input("Enter prompt: ")
 	if prompt ~= "" then
-		api.make_request_visual(prompt, api_key, model)
+		M.make_request_visual(prompt, api_key, model)
 	end
 end
 
