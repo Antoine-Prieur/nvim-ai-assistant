@@ -1,15 +1,12 @@
 local M = {}
 
 local ui = require("ai_assistant.ui")
-
-local log = function(msg)
-	vim.api.nvim_echo({ { msg, "Normal" } }, true, {})
-end
+local history = require("ai_assistant.history")
 
 local function get_curl_command(prompt, api_key, model)
 	local json_data = vim.json.encode({
 		model = model,
-		max_tokens = 1000,
+		max_tokens = 2048,
 		temperature = 0,
 		stream = true,
 		messages = { {
@@ -31,7 +28,6 @@ M.query_assistant = function(prompt, api_key, model)
 	local full_content = ""
 
 	local function on_stdout(_, data)
-		log("Received data chunk")
 		for _, line in ipairs(data) do
 			if line:match("^data: ") then
 				local json_str = line:sub(6)
@@ -39,17 +35,15 @@ M.query_assistant = function(prompt, api_key, model)
 					local success, response = pcall(vim.json.decode, json_str)
 					if success and response.type == "content_block_delta" then
 						full_content = full_content .. response.delta.text
-						log("Scheduling buffer update")
 						vim.schedule(function()
-							log("Inside schedule callback")
 							local lines = vim.split(full_content, "\n")
 							vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-							log("Buffer updated")
 						end)
 					end
 				end
 			end
 		end
+		history.log_api_call(prompt, full_content)
 	end
 
 	local curl_cmd = get_curl_command(prompt, api_key, model)
